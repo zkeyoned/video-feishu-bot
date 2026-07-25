@@ -12,13 +12,37 @@ from .models import AnalysisArtifact, DownloadedVideo
 def normalize_answer(value: object) -> str:
     if not isinstance(value, dict):
         return str(value or "")
-    core = str(value.get("核心观点") or value.get("core_points") or "").strip()
-    raw_steps = value.get("操作步骤") or value.get("steps") or []
+
+    def section_text(raw: object, label: str) -> str:
+        text = str(raw or "").strip()
+        for separator in ("：", ":"):
+            prefix = f"{label}{separator}"
+            if text.startswith(prefix):
+                return text[len(prefix) :].strip()
+        return text
+
+    core = section_text(
+        value.get("核心观点")
+        or value.get("core_points")
+        or value.get("core_view")
+        or value.get("core_viewpoint"),
+        "核心观点",
+    )
+    raw_steps = (
+        value.get("操作步骤")
+        or value.get("steps")
+        or value.get("operation_steps")
+        or value.get("operational_steps")
+        or []
+    )
     if isinstance(raw_steps, list):
         steps = "\n".join(str(item).strip() for item in raw_steps if str(item).strip())
     else:
-        steps = str(raw_steps or "").strip()
-    insights = str(value.get("可复用启发") or value.get("reusable_insights") or "").strip()
+        steps = section_text(raw_steps, "操作步骤")
+    insights = section_text(
+        value.get("可复用启发") or value.get("reusable_insights"),
+        "可复用启发",
+    )
     sections = []
     if core:
         sections.append(f"核心观点：{core}")
