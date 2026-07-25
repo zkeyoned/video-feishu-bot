@@ -95,7 +95,13 @@ class BotSettings:
             analysis_mode=mode,
             analysis_question=os.environ.get(
                 "VIDEO_BOT_QUESTION",
-                "完整理解这个视频，并提炼核心观点、操作步骤、时间线和可复用启发。",
+                (
+                    "完整理解这个视频，并提炼核心观点、操作步骤、时间线和可复用启发。"
+                    "answer 字段必须严格分为‘核心观点：’‘操作步骤：’‘可复用启发：’三段，"
+                    "三段内容必须彼此不同、各写各的：核心观点讲主张，操作步骤给有序编号的"
+                    "具体做法，可复用启发讲可迁移的方法论；任何一段都不要复述一句话摘要，"
+                    "也不要三段写同样的话。若某段确无内容，写‘无’而不是复制其他段。"
+                ),
             ).strip(),
             downloader=downloader,
             download_dir=download_dir.expanduser().resolve(),

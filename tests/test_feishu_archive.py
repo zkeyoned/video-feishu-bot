@@ -137,3 +137,14 @@ def test_document_batches_omit_fragile_optional_index() -> None:
     client.append_document_blocks("doc1", [{"block_type": 2}] * 51)
     assert all("index" not in request for request in requests)
     assert [len(request["children"]) for request in requests] == [50, 1]
+
+
+def test_sections_never_triplicate_summary(tmp_path: Path) -> None:
+    base = artifact(tmp_path)
+    only_summary = AnalysisArtifact(
+        **{**base.__dict__, "answer": "", "summary": "这是一段完整的整体分析。"}
+    )
+    core, steps, insights = answer_sections(only_summary)
+    assert core == "这是一段完整的整体分析。"
+    assert steps != core and insights != core
+    assert "未单独提炼" in steps and "未单独提炼" in insights

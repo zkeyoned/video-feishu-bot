@@ -333,12 +333,22 @@ def answer_sections(analysis: AnalysisArtifact) -> tuple[str, str, str]:
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(analysis.answer)
         values[match.group(1)] = analysis.answer[match.end() : end].strip()
-    fallback = analysis.answer.strip() or analysis.summary.strip() or "暂无内容"
-    return (
-        values.get(labels[0]) or analysis.summary.strip() or fallback,
-        values.get(labels[1]) or fallback,
-        values.get(labels[2]) or analysis.summary.strip() or fallback,
-    )
+    # 三段必须是「不同」的内容。模型没有按标记切分时（常见于只填了 summary、
+    # 三段字段留空），绝不能把同一段摘要塞进三栏——那会让文档出现一模一样的三段。
+    # 此时只在「核心观点」放一次整体分析，其余两栏给诚实的指引占位。
+    summary = analysis.summary.strip()
+    whole = analysis.answer.strip() or summary or "暂无内容"
+    pointer = "（本段模型未单独提炼，参见上方“核心观点”与“一句话摘要”）"
+
+    core = values.get(labels[0]) or summary or whole
+    steps = values.get(labels[1]) or pointer
+    insights = values.get(labels[2]) or pointer
+    # 若三段被回填成同一段，把重复项降级为指引占位
+    if steps == core:
+        steps = pointer
+    if insights in (core, steps):
+        insights = pointer
+    return (core, steps, insights)
 
 
 def _seconds(timecode: str) -> float | None:
