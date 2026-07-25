@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.kongke.video-feishu-bot</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/PATH/TO/python3.12</string>
+        <string>-m</string>
+        <string>video_feishu_bot.app</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/PATH/TO/VideoFeishuBot</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>PYTHONPATH</key>
+        <string>/PATH/TO/HOME/Desktop/飞书/视频分析/video-feishu-bot/src:/PATH/TO/HOME/Desktop/飞书/视频分析/video-feishu-bot/.venv/lib/python3.12/site-packages</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    <key>StandardOutPath</key>
+    <string>/PATH/TO/VideoFeishuBot/logs/bot.log</string>
+    <key>StandardErrorPath</key>
+    <string>/PATH/TO/VideoFeishuBot/logs/bot-error.log</string>
+</dict>
+</plist>
