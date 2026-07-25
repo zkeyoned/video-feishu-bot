@@ -322,6 +322,19 @@ def infer_category(analysis: AnalysisArtifact) -> str:
     return "待分类"
 
 
+_SECTION_PREFIX = re.compile(r"^\s*(?:#{1,3}\s*)?(?:核心观点|操作步骤|可复用启发)\s*[:：]\s*")
+
+
+def _strip_section_prefixes(text: str) -> str:
+    """反复剥掉开头的段标签，防止模型把「可复用启发：可复用启发：」写进正文。"""
+    prev = None
+    cur = text.strip()
+    while cur != prev:
+        prev = cur
+        cur = _SECTION_PREFIX.sub("", cur).strip()
+    return cur
+
+
 def answer_sections(analysis: AnalysisArtifact) -> tuple[str, str, str]:
     """Extract the three required report sections from the model answer."""
     labels = ("核心观点", "操作步骤", "可复用启发")
@@ -332,21 +345,27 @@ def answer_sections(analysis: AnalysisArtifact) -> tuple[str, str, str]:
     values: dict[str, str] = {}
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(analysis.answer)
-        values[match.group(1)] = analysis.answer[match.end() : end].strip()
-    # 三段必须是「不同」的内容。模型没有按标记切分时（常见于只填了 summary、
-    # 三段字段留空），绝不能把同一段摘要塞进三栏——那会让文档出现一模一样的三段。
-    # 此时只在「核心观点」放一次整体分析，其余两栏给诚实的指引占位。
+        values[match.group(1)] = _strip_section_prefixes(
+            analysis.answer[match.end() : end]
+        )
+    # 三段必须是「不同」的内容。模型没分段、或把某段内容错填到另一段（如把「可复用
+    # 启发」塞进「操作步骤」）时，绝不能让两栏出现同一段——宁可诚实留白。
     summary = analysis.summary.strip()
-    whole = analysis.answer.strip() or summary or "暂无内容"
+    whole = _strip_section_prefixes(analysis.answer) or summary or "暂无内容"
     pointer = "（本段模型未单独提炼，参见上方“核心观点”与“一句话摘要”）"
 
     core = values.get(labels[0]) or summary or whole
     steps = values.get(labels[1]) or pointer
     insights = values.get(labels[2]) or pointer
-    # 若三段被回填成同一段，把重复项降级为指引占位
-    if steps == core:
+    # 交叉去重：任何一栏与更靠前的栏雷同（模型错填/回填），降级为指引占位。
+    if insights in (core, steps) and insights != pointer:
+        if steps == insights:
+            steps = pointer
+        else:
+            insights = pointer
+    if steps in (core, insights) and steps != pointer:
         steps = pointer
-    if insights in (core, steps):
+    if insights == core and insights != pointer:
         insights = pointer
     return (core, steps, insights)
 

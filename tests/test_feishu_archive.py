@@ -148,3 +148,21 @@ def test_sections_never_triplicate_summary(tmp_path: Path) -> None:
     assert core == "这是一段完整的整体分析。"
     assert steps != core and insights != core
     assert "未单独提炼" in steps and "未单独提炼" in insights
+
+
+def test_model_mislabels_steps_with_insights(tmp_path: Path) -> None:
+    base = artifact(tmp_path)
+    bad = AnalysisArtifact(
+        **{
+            **base.__dict__,
+            "summary": "整段摘要。",
+            "answer": (
+                "操作步骤：可复用启发：可复用启发：① 多任务连续执行；② 体验设计。\n"
+                "可复用启发：可复用启发：① 多任务连续执行；② 体验设计。"
+            ),
+        }
+    )
+    core, steps, insights = answer_sections(bad)
+    assert core == "整段摘要。"
+    assert insights.startswith("① 多任务") and "可复用启发" not in insights
+    assert steps != insights and "未单独提炼" in steps
